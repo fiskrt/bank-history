@@ -1,4 +1,4 @@
-# UBS Transaction Dashboard
+# UBS Transaction Visualizer
 
 Dashboard for bank transactions with following funcionality:
 
