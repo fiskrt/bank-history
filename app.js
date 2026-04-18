@@ -167,7 +167,7 @@ function aggregate(rows) {
     if (amount < 0) add(month.expenses, category, Math.abs(amount), row);
   }
 
-  return [...months.entries()].sort(([a], [b]) => a.localeCompare(b));
+  return [...months.entries()].sort(([a], [b]) => b.localeCompare(a));
 }
 
 function prepareRows(rows) {
