@@ -77,6 +77,97 @@ h1 {
   color: var(--muted);
 }
 
+.drawer {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 5;
+  width: min(520px, 100%);
+  padding: 22px;
+  overflow: auto;
+  border-left: 2px solid var(--ink);
+  background: #fff;
+  box-shadow: -18px 0 50px rgba(27, 28, 30, 0.2);
+  transform: translateX(100%);
+  transition: transform 180ms ease;
+}
+
+.drawer.open {
+  transform: translateX(0);
+}
+
+.drawer h3 {
+  margin: 0 0 4px;
+  padding-right: 80px;
+  font-size: 24px;
+}
+
+.drawer p {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.drawer-close {
+  position: sticky;
+  top: 0;
+  float: right;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  background: rgba(27, 28, 30, 0.28);
+}
+
+.tx-list {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tx-list li {
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: baseline;
+  padding-top: 7px;
+  border-top: 1px solid var(--line);
+}
+
+.tx-date,
+.tx-cat {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tx-desc {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tx-cat {
+  display: block;
+}
+
+.tx-amount {
+  font-weight: 900;
+  white-space: nowrap;
+}
+
 .month {
   padding: 28px 0;
   border-top: 1px solid var(--line);
@@ -139,7 +230,15 @@ h2 {
 .segment {
   min-width: 0;
   height: 100%;
+  border: 0;
   animation: grow 420ms ease both;
+  cursor: pointer;
+}
+
+.segment:hover,
+.segment:focus {
+  outline: 3px solid rgba(27, 28, 30, 0.35);
+  outline-offset: -3px;
 }
 
 .segment-label {
@@ -170,6 +269,7 @@ h2 {
   align-items: center;
   color: var(--muted);
   font-size: 13px;
+  cursor: pointer;
 }
 
 .swatch {
@@ -220,5 +320,13 @@ h2 {
 
   .plots {
     grid-template-columns: 1fr;
+  }
+
+  .tx-list li {
+    grid-template-columns: 74px minmax(0, 1fr);
+  }
+
+  .tx-amount {
+    grid-column: 2;
   }
 }
