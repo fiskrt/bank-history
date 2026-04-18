@@ -622,6 +622,23 @@ h2 {
     grid-template-columns: 1fr;
   }
 
+  .match-plot,
+  .scatter {
+    min-height: 340px;
+  }
+
+  .axis-label {
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  .y-label {
+    paint-order: stroke;
+    stroke: rgba(255, 255, 255, 0.9);
+    stroke-width: 5px;
+    stroke-linejoin: round;
+  }
+
   .tx-list li {
     grid-template-columns: 74px minmax(0, 1fr);
   }

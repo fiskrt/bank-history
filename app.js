@@ -447,9 +447,12 @@ function renderMatcher(rows) {
   const mode = lineOn ? ` · ${points.length} ${aggregate} buckets` : ` · ${points.length} daily points`;
   plotSummaryEl.textContent = `${matches.length} matches${mode} · ${money(total)} total size · ${incomeCount} in / ${expenseCount} out`;
 
-  const width = 980;
-  const height = 300;
-  const pad = { top: 22, right: 28, bottom: 42, left: 74 };
+  const compact = window.matchMedia("(max-width: 760px)").matches;
+  const width = compact ? 390 : 980;
+  const height = compact ? 340 : 300;
+  const pad = compact
+    ? { top: 18, right: 8, bottom: 40, left: 8 }
+    : { top: 22, right: 28, bottom: 42, left: 74 };
   const { start, end } = selectedRange();
   const startTime = dates[start];
   const endTime = dates[end];
@@ -464,6 +467,17 @@ function renderMatcher(rows) {
   };
   const y = (amount) => pad.top + plotHeight - (Math.abs(amount) / maxAmount) * plotHeight;
   const yMid = Math.ceil(maxAmount / 2);
+  const yLabels = compact
+    ? `
+      <text class="axis-label y-label" x="${pad.left + 6}" y="${y(maxAmount) + 14}">${escapeHTML(money(maxAmount))}</text>
+      <text class="axis-label y-label" x="${pad.left + 6}" y="${y(yMid) - 6}">${escapeHTML(money(yMid))}</text>
+      <text class="axis-label y-label" x="${pad.left + 6}" y="${height - pad.bottom - 7}">${escapeHTML(money(0))}</text>
+    `
+    : `
+      <text class="axis-label" x="${pad.left - 8}" y="${y(maxAmount) + 4}" text-anchor="end">${escapeHTML(money(maxAmount))}</text>
+      <text class="axis-label" x="${pad.left - 8}" y="${y(yMid) + 4}" text-anchor="end">${escapeHTML(money(yMid))}</text>
+      <text class="axis-label" x="${pad.left - 8}" y="${height - pad.bottom + 4}" text-anchor="end">${escapeHTML(money(0))}</text>
+    `;
 
   matchPlotEl.innerHTML = `
     <svg class="scatter" viewBox="0 0 ${width} ${height}" role="img" aria-label="Matched transactions over time">
@@ -472,9 +486,7 @@ function renderMatcher(rows) {
       <line class="axis" x1="${pad.left}" y1="${height - pad.bottom}" x2="${width - pad.right}" y2="${height - pad.bottom}"></line>
       <text class="axis-label" x="${pad.left}" y="${height - 12}">${escapeHTML(dateText(startTime))}</text>
       <text class="axis-label" x="${width - pad.right}" y="${height - 12}" text-anchor="end">${escapeHTML(dateText(endTime))}</text>
-      <text class="axis-label" x="10" y="${y(maxAmount) + 4}">${escapeHTML(money(maxAmount))}</text>
-      <text class="axis-label" x="10" y="${y(yMid) + 4}">${escapeHTML(money(yMid))}</text>
-      <text class="axis-label" x="10" y="${height - pad.bottom + 4}">${escapeHTML(money(0))}</text>
+      ${yLabels}
     </svg>
   `;
 
@@ -494,7 +506,7 @@ function renderMatcher(rows) {
     point.classList.add("plot-point");
     point.setAttribute("cx", x(pointData.time));
     point.setAttribute("cy", y(pointData.amount));
-    point.setAttribute("r", pointData.rows.length > 1 ? "8" : "7");
+    point.setAttribute("r", compact ? (pointData.rows.length > 1 ? "10" : "8") : (pointData.rows.length > 1 ? "8" : "7"));
     point.setAttribute("tabindex", "0");
     point.setAttribute("fill", pointData.fill);
     const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
