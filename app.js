@@ -382,9 +382,12 @@ function renderMatcher(rows) {
 
   if (!query) {
     plotSummaryEl.textContent = "Type to search transactions";
-    matchPlotEl.innerHTML = `<div class="match-empty">Search a field, for example Description contains tennisclub.</div>`;
+    matchPlotEl.hidden = true;
+    matchPlotEl.innerHTML = "";
     return;
   }
+
+  matchPlotEl.hidden = false;
 
   const matches = rows
     .filter((row) => String(row[field] ?? "").toLowerCase().includes(query))
