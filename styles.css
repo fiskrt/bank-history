@@ -38,6 +38,10 @@ main {
   border-bottom: 2px solid var(--ink);
 }
 
+body.empty .top {
+  justify-content: space-between;
+}
+
 .eyebrow {
   margin: 0 0 6px;
   color: var(--muted);
@@ -65,6 +69,17 @@ h1 {
   cursor: pointer;
 }
 
+body.empty .file {
+  position: fixed;
+  top: 25%;
+  left: 50%;
+  z-index: 3;
+  transform: translate(-50%, -50%);
+  min-height: 52px;
+  padding: 0 24px;
+  font-size: 18px;
+}
+
 .file input {
   position: absolute;
   inline-size: 1px;
@@ -75,6 +90,17 @@ h1 {
 .status {
   margin: 18px 0;
   color: var(--muted);
+}
+
+body.empty .status {
+  position: fixed;
+  top: calc(30% + 44px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100% - 32px));
+  max-width: 720px;
+  line-height: 1.5;
+  text-align: center;
 }
 
 .range-panel {

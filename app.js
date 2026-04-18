@@ -242,8 +242,10 @@ function filteredRows() {
 function loadRows(rows) {
   allRows = prepareRows(rows);
   dates = [...new Set(allRows.map((row) => row._time))];
+  document.body.classList.remove("empty");
 
   if (!dates.length) {
+    document.body.classList.add("empty");
     statusEl.textContent = "No valid transactions found.";
     rangeControlEl.hidden = true;
     totalsEl.hidden = true;
@@ -594,7 +596,12 @@ async function loadDefault() {
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     loadRows(parseCSV(await response.text()));
   } catch {
-    statusEl.textContent = "Open through a local server, or load the CSV manually.";
+    statusEl.innerHTML = `
+      Load your CSV to begin. Your transactions never leave this browser; nothing is uploaded, stored,
+      or sent elsewhere. Hence, once the website is loaded, everything works offline without an
+      internet connection. Don't trust me though, check out the code for yourself and run it locally.
+      <a href="https://github.com/fiskrt/bank-history/">github.com/fiskrt/bank-history</a>
+    `;
   }
 }
 

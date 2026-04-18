@@ -1,4 +1,4 @@
-# UBS Transaction Visualizer
+# Cash Flow Visualizer
 
 Dashboard for bank transactions with following funcionality:
 
