@@ -1,4 +1,9 @@
 const statusEl = document.querySelector("#status");
+const rangeControlEl = document.querySelector("#rangeControl");
+const rangeLabelEl = document.querySelector("#rangeLabel");
+const startRangeEl = document.querySelector("#startRange");
+const endRangeEl = document.querySelector("#endRange");
+const resetRangeEl = document.querySelector("#resetRange");
 const totalsEl = document.querySelector("#totals");
 const monthsEl = document.querySelector("#months");
 const fileEl = document.querySelector("#file");
@@ -20,6 +25,9 @@ const colors = [
   "#43aa8b",
   "#6d6875",
 ];
+
+let allRows = [];
+let dates = [];
 
 function parseCSV(text) {
   const rows = [];
@@ -66,6 +74,12 @@ function parseAmount(value) {
   return Number(String(value).trim().replace(/[',\s]/g, ""));
 }
 
+function parseDate(value) {
+  const [day, month, year] = String(value).split(".").map(Number);
+  if (!day || !month || !year) return NaN;
+  return new Date(year, month - 1, day).getTime();
+}
+
 function monthKey(date) {
   const [day, month, year] = date.split(".");
   if (!day || !month || !year) return "";
@@ -93,6 +107,11 @@ function money(value) {
     currency: "CHF",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+function dateText(time) {
+  return new Intl.DateTimeFormat("en", { day: "2-digit", month: "short", year: "numeric" })
+    .format(new Date(time));
 }
 
 function add(map, key, value, row) {
@@ -136,8 +155,8 @@ function aggregate(rows) {
   const months = new Map();
 
   for (const row of rows) {
-    const amount = parseAmount(row.Amount);
-    const key = monthKey(row["Transaction date"]);
+    const amount = row._amount;
+    const key = row._month;
     if (!Number.isFinite(amount) || amount === 0 || !key) continue;
 
     if (!months.has(key)) months.set(key, { income: new Map(), expenses: new Map() });
@@ -149,6 +168,74 @@ function aggregate(rows) {
   }
 
   return [...months.entries()].sort(([a], [b]) => a.localeCompare(b));
+}
+
+function prepareRows(rows) {
+  return rows
+    .map((row) => {
+      const amount = parseAmount(row.Amount);
+      const time = parseDate(row["Transaction date"]);
+      return {
+        ...row,
+        _amount: amount,
+        _time: time,
+        _month: monthKey(row["Transaction date"]),
+      };
+    })
+    .filter((row) => Number.isFinite(row._amount) && Number.isFinite(row._time))
+    .sort((a, b) => a._time - b._time);
+}
+
+function selectedRange() {
+  const start = Math.min(Number(startRangeEl.value), Number(endRangeEl.value));
+  const end = Math.max(Number(startRangeEl.value), Number(endRangeEl.value));
+  return { start, end };
+}
+
+function updateRangeUI() {
+  if (!dates.length) return;
+  const { start, end } = selectedRange();
+  startRangeEl.value = start;
+  endRangeEl.value = end;
+  startRangeEl.style.zIndex = start === end ? 2 : 1;
+  endRangeEl.style.zIndex = 2;
+
+  const max = dates.length - 1;
+  const left = max ? (start / max) * 100 : 0;
+  const right = max ? (end / max) * 100 : 100;
+  rangeControlEl.style.setProperty("--range-left", `${left}%`);
+  rangeControlEl.style.setProperty("--range-right", `${right}%`);
+  rangeLabelEl.textContent = `${dateText(dates[start])} to ${dateText(dates[end])}`;
+}
+
+function filteredRows() {
+  if (!dates.length) return [];
+  const { start, end } = selectedRange();
+  const startTime = dates[start];
+  const endTime = dates[end];
+  return allRows.filter((row) => row._time >= startTime && row._time <= endTime);
+}
+
+function loadRows(rows) {
+  allRows = prepareRows(rows);
+  dates = [...new Set(allRows.map((row) => row._time))];
+
+  if (!dates.length) {
+    statusEl.textContent = "No valid transactions found.";
+    rangeControlEl.hidden = true;
+    totalsEl.hidden = true;
+    monthsEl.textContent = "";
+    return;
+  }
+
+  startRangeEl.min = "0";
+  endRangeEl.min = "0";
+  startRangeEl.max = String(dates.length - 1);
+  endRangeEl.max = String(dates.length - 1);
+  startRangeEl.value = "0";
+  endRangeEl.value = String(dates.length - 1);
+  rangeControlEl.hidden = false;
+  render();
 }
 
 function showTransactions(month, title, segment, total) {
@@ -235,10 +322,13 @@ function renderPlot(month, title, segments) {
   return root;
 }
 
-function render(rows) {
+function render() {
+  closeDetails();
+  updateRangeUI();
+  const rows = filteredRows();
   const months = aggregate(rows);
   monthsEl.textContent = "";
-  statusEl.textContent = `${rows.length.toLocaleString()} rows parsed. Positive amounts are income. Negative amounts are expenses.`;
+  statusEl.textContent = `${rows.length.toLocaleString()} of ${allRows.length.toLocaleString()} rows shown. Positive amounts are income. Negative amounts are expenses.`;
 
   let totalIncome = 0;
   let totalExpenses = 0;
@@ -281,7 +371,7 @@ async function loadDefault() {
   try {
     const response = await fetch("transactions.csv");
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    render(parseCSV(await response.text()));
+    loadRows(parseCSV(await response.text()));
   } catch {
     statusEl.textContent = "Open through a local server, or load the CSV manually.";
   }
@@ -289,7 +379,23 @@ async function loadDefault() {
 
 fileEl.addEventListener("change", async () => {
   const file = fileEl.files[0];
-  if (file) render(parseCSV(await file.text()));
+  if (file) loadRows(parseCSV(await file.text()));
+});
+
+startRangeEl.addEventListener("input", () => {
+  if (Number(startRangeEl.value) > Number(endRangeEl.value)) endRangeEl.value = startRangeEl.value;
+  render();
+});
+
+endRangeEl.addEventListener("input", () => {
+  if (Number(endRangeEl.value) < Number(startRangeEl.value)) startRangeEl.value = endRangeEl.value;
+  render();
+});
+
+resetRangeEl.addEventListener("click", () => {
+  startRangeEl.value = "0";
+  endRangeEl.value = String(dates.length - 1);
+  render();
 });
 
 closeDetailsEl.addEventListener("click", closeDetails);

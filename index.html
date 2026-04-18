@@ -20,6 +20,20 @@
       </header>
 
       <p id="status" class="status">Loading transactions.csv...</p>
+      <section id="rangeControl" class="range-panel" hidden>
+        <div class="range-head">
+          <div>
+            <span>Date range</span>
+            <strong id="rangeLabel"></strong>
+          </div>
+          <button id="resetRange" type="button">Full period</button>
+        </div>
+        <div class="range-slider">
+          <div class="range-track"></div>
+          <input id="startRange" type="range" value="0" min="0" max="0" />
+          <input id="endRange" type="range" value="0" min="0" max="0" />
+        </div>
+      </section>
       <div id="totals" class="totals" hidden></div>
       <div id="months" class="months"></div>
     </main>
