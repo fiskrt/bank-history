@@ -261,6 +261,7 @@ body.example .file {
 .plotter-head strong {
   display: block;
   margin-top: 3px;
+  min-height: 22px;
   font-size: 18px;
 }
 
@@ -282,6 +283,7 @@ body.example .file {
   background: #fff;
   color: var(--ink);
   font: inherit;
+  font-size: 16px;
   font-weight: 800;
 }
 
