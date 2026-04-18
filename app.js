@@ -5,6 +5,11 @@ const startRangeEl = document.querySelector("#startRange");
 const endRangeEl = document.querySelector("#endRange");
 const resetRangeEl = document.querySelector("#resetRange");
 const totalsEl = document.querySelector("#totals");
+const plotterEl = document.querySelector("#plotter");
+const plotSummaryEl = document.querySelector("#plotSummary");
+const plotFieldEl = document.querySelector("#plotField");
+const plotQueryEl = document.querySelector("#plotQuery");
+const matchPlotEl = document.querySelector("#matchPlot");
 const monthsEl = document.querySelector("#months");
 const fileEl = document.querySelector("#file");
 const detailsEl = document.querySelector("#details");
@@ -268,6 +273,105 @@ function closeDetails() {
   scrimEl.hidden = true;
 }
 
+function showSingleTransaction(row) {
+  const amount = Math.abs(row._amount);
+  const direction = row._amount >= 0 ? "Income" : "Expense";
+  detailsBodyEl.innerHTML = `
+    <h3>${escapeHTML(direction)} / ${escapeHTML(row.Category || "Uncategorized")}</h3>
+    <p>${money(amount)} · ${escapeHTML(row["Transaction date"])}</p>
+    <ul class="tx-list">
+      <li>
+        <span class="tx-date">${escapeHTML(row["Transaction date"])}</span>
+        <span>
+          <span class="tx-desc">${escapeHTML(row.Description)}</span>
+          <span class="tx-cat">${escapeHTML(row.Category || "Uncategorized")}</span>
+        </span>
+        <span class="tx-amount">${money(amount)}</span>
+      </li>
+    </ul>
+  `;
+  detailsEl.classList.add("open");
+  detailsEl.setAttribute("aria-hidden", "false");
+  scrimEl.hidden = false;
+}
+
+function renderMatcher(rows) {
+  plotterEl.hidden = false;
+  const query = plotQueryEl.value.trim().toLowerCase();
+  const field = plotFieldEl.value;
+
+  if (!query) {
+    plotSummaryEl.textContent = "Type to search transactions";
+    matchPlotEl.innerHTML = `<div class="match-empty">Search a field, for example Description contains tennisclub.</div>`;
+    return;
+  }
+
+  const matches = rows
+    .filter((row) => String(row[field] ?? "").toLowerCase().includes(query))
+    .sort((a, b) => a._time - b._time);
+
+  if (!matches.length) {
+    plotSummaryEl.textContent = `No matches for "${plotQueryEl.value}"`;
+    matchPlotEl.innerHTML = `<div class="match-empty">No transactions match this search in the selected period.</div>`;
+    return;
+  }
+
+  const total = matches.reduce((sum, row) => sum + Math.abs(row._amount), 0);
+  const incomeCount = matches.filter((row) => row._amount > 0).length;
+  const expenseCount = matches.filter((row) => row._amount < 0).length;
+  plotSummaryEl.textContent = `${matches.length} matches · ${money(total)} total size · ${incomeCount} in / ${expenseCount} out`;
+
+  const width = 980;
+  const height = 300;
+  const pad = { top: 22, right: 28, bottom: 42, left: 74 };
+  const { start, end } = selectedRange();
+  const startTime = dates[start];
+  const endTime = dates[end];
+  const minTime = startTime === endTime ? startTime - 43200000 : startTime;
+  const maxTime = startTime === endTime ? endTime + 43200000 : endTime;
+  const maxAmount = Math.max(...matches.map((row) => Math.abs(row._amount)), 1);
+  const plotWidth = width - pad.left - pad.right;
+  const plotHeight = height - pad.top - pad.bottom;
+  const x = (time) => pad.left + ((time - minTime) / (maxTime - minTime)) * plotWidth;
+  const y = (amount) => pad.top + plotHeight - (Math.abs(amount) / maxAmount) * plotHeight;
+  const yMid = Math.ceil(maxAmount / 2);
+
+  matchPlotEl.innerHTML = `
+    <svg class="scatter" viewBox="0 0 ${width} ${height}" role="img" aria-label="Matched transactions over time">
+      <line class="grid" x1="${pad.left}" y1="${y(yMid)}" x2="${width - pad.right}" y2="${y(yMid)}"></line>
+      <line class="axis" x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${height - pad.bottom}"></line>
+      <line class="axis" x1="${pad.left}" y1="${height - pad.bottom}" x2="${width - pad.right}" y2="${height - pad.bottom}"></line>
+      <text class="axis-label" x="${pad.left}" y="${height - 12}">${escapeHTML(dateText(startTime))}</text>
+      <text class="axis-label" x="${width - pad.right}" y="${height - 12}" text-anchor="end">${escapeHTML(dateText(endTime))}</text>
+      <text class="axis-label" x="10" y="${y(maxAmount) + 4}">${escapeHTML(money(maxAmount))}</text>
+      <text class="axis-label" x="10" y="${y(yMid) + 4}">${escapeHTML(money(yMid))}</text>
+      <text class="axis-label" x="10" y="${height - pad.bottom + 4}">${escapeHTML(money(0))}</text>
+    </svg>
+  `;
+
+  const svg = matchPlotEl.querySelector("svg");
+  for (const row of matches) {
+    const point = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    point.classList.add("plot-point");
+    point.setAttribute("cx", x(row._time));
+    point.setAttribute("cy", y(row._amount));
+    point.setAttribute("r", "7");
+    point.setAttribute("tabindex", "0");
+    point.setAttribute("fill", row._amount >= 0 ? "var(--income)" : "var(--expense)");
+    const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+    title.textContent = `${row["Transaction date"]} · ${row.Description} · ${money(Math.abs(row._amount))}`;
+    point.append(title);
+    point.addEventListener("click", () => showSingleTransaction(row));
+    point.addEventListener("keydown", (event) => {
+      if (event.key === "Enter" || event.key === " ") {
+        event.preventDefault();
+        showSingleTransaction(row);
+      }
+    });
+    svg.append(point);
+  }
+}
+
 function renderPlot(month, title, segments) {
   const total = segments.reduce((sum, segment) => sum + segment.amount, 0);
   const root = document.createElement("div");
@@ -343,6 +447,7 @@ function render() {
     <div class="total"><span>Total out</span><strong>${money(totalExpenses)}</strong></div>
     <div class="total ${net >= 0 ? "net-positive" : "net-negative"}"><span>Difference</span><strong>${money(net)}</strong></div>
   `;
+  renderMatcher(rows);
 
   for (const [key, values] of months) {
     const label = monthName(key);
@@ -397,6 +502,9 @@ resetRangeEl.addEventListener("click", () => {
   endRangeEl.value = String(dates.length - 1);
   render();
 });
+
+plotFieldEl.addEventListener("change", render);
+plotQueryEl.addEventListener("input", render);
 
 closeDetailsEl.addEventListener("click", closeDetails);
 scrimEl.addEventListener("click", closeDetails);

@@ -35,6 +35,30 @@
         </div>
       </section>
       <div id="totals" class="totals" hidden></div>
+      <section id="plotter" class="plotter" hidden>
+        <div class="plotter-head">
+          <div>
+            <span>Transaction plotter</span>
+            <strong id="plotSummary">Type to search transactions</strong>
+          </div>
+          <div class="plotter-controls">
+            <label>
+              Field
+              <select id="plotField">
+                <option value="Description">Description</option>
+                <option value="Category">Category</option>
+                <option value="Account or card number">Account/card</option>
+                <option value="Income or expense">Income/expense</option>
+              </select>
+            </label>
+            <label>
+              Contains
+              <input id="plotQuery" type="search" placeholder="tennisclub" />
+            </label>
+          </div>
+        </div>
+        <div id="matchPlot" class="match-plot"></div>
+      </section>
       <div id="months" class="months"></div>
     </main>
     <aside id="details" class="drawer" aria-hidden="true">
