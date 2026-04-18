@@ -373,14 +373,19 @@ function plotPoints(matches, aggregate) {
     }));
 }
 
+function queryTerms(query) {
+  return query.toLowerCase().split("|").map((term) => term.trim()).filter(Boolean);
+}
+
 function renderMatcher(rows) {
   plotterEl.hidden = false;
-  const query = plotQueryEl.value.trim().toLowerCase();
+  const query = plotQueryEl.value.trim();
   const field = plotFieldEl.value;
   const aggregate = plotAggregateEl.value;
   const lineOn = aggregate !== "transaction";
 
-  if (!query) {
+  const terms = queryTerms(query);
+  if (!terms.length) {
     plotSummaryEl.textContent = "Type to search transactions";
     matchPlotEl.hidden = true;
     matchPlotEl.innerHTML = "";
@@ -390,7 +395,10 @@ function renderMatcher(rows) {
   matchPlotEl.hidden = false;
 
   const matches = rows
-    .filter((row) => String(row[field] ?? "").toLowerCase().includes(query))
+    .filter((row) => {
+      const value = String(row[field] ?? "").toLowerCase();
+      return terms.some((term) => value.includes(term));
+    })
     .sort((a, b) => a._time - b._time);
 
   if (!matches.length) {
