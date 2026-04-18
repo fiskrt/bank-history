@@ -35,8 +35,39 @@ const colors = [
   "#6d6875",
 ];
 
+const exampleRows = [
+  row("05.01.2026", "Example salary payment", "Income", "5'800.00", "Salary & pensions"),
+  row("07.01.2026", "Migros grocery run", "Expense", "-86.40", "Groceries"),
+  row("11.01.2026", "Coop city food", "Expense", "-42.15", "Groceries"),
+  row("18.01.2026", "Tennisclub winter court", "Expense", "-210.00", "Sports"),
+  row("24.01.2026", "Rent payment", "Expense", "-2'100.00", "Household"),
+  row("03.02.2026", "Example salary payment", "Income", "5'800.00", "Salary & pensions"),
+  row("06.02.2026", "SBB mobile ticket", "Expense", "-58.00", "Transportation"),
+  row("10.02.2026", "Migros weekly shop", "Expense", "-112.70", "Groceries"),
+  row("15.02.2026", "Tennisclub coaching", "Expense", "-160.00", "Sports"),
+  row("22.02.2026", "Freelance refund", "Income", "420.00", "Other income"),
+  row("04.03.2026", "Example salary payment", "Income", "5'800.00", "Salary & pensions"),
+  row("08.03.2026", "Coop weekend groceries", "Expense", "-74.35", "Groceries"),
+  row("12.03.2026", "Restaurant evening", "Expense", "-96.20", "Restaurants & bars"),
+  row("19.03.2026", "Tennisclub membership", "Expense", "-320.00", "Sports"),
+  row("27.03.2026", "Health insurance", "Expense", "-348.80", "Insurance"),
+];
+
 let allRows = [];
 let dates = [];
+let showingExample = true;
+
+function row(date, description, type, amount, category) {
+  return {
+    "Transaction date": date,
+    "Account or card number": "Example account",
+    Description: description,
+    "Income or expense": type,
+    Amount: amount,
+    Currency: "CHF",
+    Category: category,
+  };
+}
 
 function parseCSV(text) {
   const rows = [];
@@ -239,13 +270,13 @@ function filteredRows() {
   return allRows.filter((row) => row._time >= startTime && row._time <= endTime);
 }
 
-function loadRows(rows) {
+function loadRows(rows, isExample = false) {
+  showingExample = isExample;
+  document.body.classList.toggle("example", isExample);
   allRows = prepareRows(rows);
   dates = [...new Set(allRows.map((row) => row._time))];
-  document.body.classList.remove("empty");
 
   if (!dates.length) {
-    document.body.classList.add("empty");
     statusEl.textContent = "No valid transactions found.";
     rangeControlEl.hidden = true;
     totalsEl.hidden = true;
@@ -550,7 +581,9 @@ function render() {
   const rows = filteredRows();
   const months = aggregate(rows);
   monthsEl.textContent = "";
-  statusEl.textContent = `${rows.length.toLocaleString()} of ${allRows.length.toLocaleString()} rows shown. Positive amounts are income. Negative amounts are expenses.`;
+  statusEl.textContent = showingExample
+    ? `${rows.length.toLocaleString()} example rows shown. Upload a UBS CSV to use your own transactions.`
+    : `${rows.length.toLocaleString()} of ${allRows.length.toLocaleString()} rows shown. Positive amounts are income. Negative amounts are expenses.`;
 
   let totalIncome = 0;
   let totalExpenses = 0;
@@ -590,19 +623,8 @@ function render() {
   }
 }
 
-async function loadDefault() {
-  try {
-    const response = await fetch("transactions.csv");
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    loadRows(parseCSV(await response.text()));
-  } catch {
-    statusEl.innerHTML = `
-      Load your CSV to begin. Your transactions never leave this browser; nothing is uploaded, stored,
-      or sent elsewhere. Hence, once the website is loaded, everything works offline without an
-      internet connection. Don't trust me though, check out the code for yourself and run it locally.
-      <a href="https://github.com/fiskrt/bank-history/">github.com/fiskrt/bank-history</a>
-    `;
-  }
+function loadDefault() {
+  loadRows(exampleRows, true);
 }
 
 fileEl.addEventListener("change", async () => {

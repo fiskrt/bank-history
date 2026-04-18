@@ -25,7 +25,7 @@ Amounts may use Swiss thousands separators like `1'150.00`.
 python3 -m http.server 8765
 ```
 
-Open `http://localhost:8765`, and load the CSV file manually.
+Open `http://localhost:8765`. Example transactions are shown by default; upload a CSV to use your own data.
 
 ## Programming
 

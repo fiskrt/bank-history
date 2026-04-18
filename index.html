@@ -6,7 +6,7 @@
     <title>Cash Flow Visualizer</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
-  <body class="empty">
+  <body>
     <main>
       <header class="top">
         <div>
@@ -19,7 +19,7 @@
         </label>
       </header>
 
-      <p id="status" class="status">Loading transactions.csv...</p>
+      <p id="status" class="status">Example data shown. Upload a UBS CSV to use your own transactions.</p>
       <section id="rangeControl" class="range-panel" hidden>
         <div class="range-head">
           <div>
@@ -73,6 +73,7 @@
         <div id="matchPlot" class="match-plot"></div>
       </section>
       <div id="months" class="months"></div>
+      <footer class="footer">© Filip Skogh 2026</footer>
     </main>
     <aside id="details" class="drawer" aria-hidden="true">
       <button id="closeDetails" class="drawer-close" type="button">Close</button>

@@ -38,10 +38,6 @@ main {
   border-bottom: 2px solid var(--ink);
 }
 
-body.empty .top {
-  justify-content: space-between;
-}
-
 .eyebrow {
   margin: 0 0 6px;
   color: var(--muted);
@@ -69,15 +65,17 @@ h1 {
   cursor: pointer;
 }
 
-body.empty .file {
-  position: fixed;
-  top: 25%;
-  left: 50%;
-  z-index: 3;
-  transform: translate(-50%, -50%);
-  min-height: 52px;
-  padding: 0 24px;
-  font-size: 18px;
+body.example .file {
+  position: relative;
+  min-height: 48px;
+  padding: 0 20px;
+  overflow: hidden;
+  border-color: transparent;
+  background:
+    linear-gradient(#fff, #fff) padding-box,
+    conic-gradient(from var(--spin), var(--income), #ff9f1c, #118ab2, var(--income)) border-box;
+  box-shadow: 0 8px 22px rgba(27, 28, 30, 0.12);
+  animation: spin-border 1.8s linear infinite;
 }
 
 .file input {
@@ -90,17 +88,6 @@ body.empty .file {
 .status {
   margin: 18px 0;
   color: var(--muted);
-}
-
-body.empty .status {
-  position: fixed;
-  top: calc(30% + 44px);
-  left: 50%;
-  transform: translateX(-50%);
-  width: min(720px, calc(100% - 32px));
-  max-width: 720px;
-  line-height: 1.5;
-  text-align: center;
 }
 
 .range-panel {
@@ -568,6 +555,16 @@ h2 {
   white-space: nowrap;
 }
 
+.footer {
+  margin-top: 40px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 800;
+  text-align: center;
+}
+
 .empty {
   height: 38px;
   padding: 10px;
@@ -580,6 +577,18 @@ h2 {
   from {
     transform: scaleX(0);
     transform-origin: left;
+  }
+}
+
+@property --spin {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes spin-border {
+  to {
+    --spin: 360deg;
   }
 }
 
