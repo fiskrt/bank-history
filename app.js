@@ -4,6 +4,9 @@ const rangeLabelEl = document.querySelector("#rangeLabel");
 const startRangeEl = document.querySelector("#startRange");
 const endRangeEl = document.querySelector("#endRange");
 const resetRangeEl = document.querySelector("#resetRange");
+const lastMonthRangeEl = document.querySelector("#lastMonthRange");
+const lastSixMonthsRangeEl = document.querySelector("#lastSixMonthsRange");
+const lastYearRangeEl = document.querySelector("#lastYearRange");
 const totalsEl = document.querySelector("#totals");
 const plotterEl = document.querySelector("#plotter");
 const plotSummaryEl = document.querySelector("#plotSummary");
@@ -196,6 +199,20 @@ function selectedRange() {
   const start = Math.min(Number(startRangeEl.value), Number(endRangeEl.value));
   const end = Math.max(Number(startRangeEl.value), Number(endRangeEl.value));
   return { start, end };
+}
+
+function firstDateIndexOnOrAfter(time) {
+  const index = dates.findIndex((date) => date >= time);
+  return index === -1 ? dates.length - 1 : index;
+}
+
+function setRangeByDays(days) {
+  if (!dates.length) return;
+  const end = dates.length - 1;
+  const startTime = dates[end] - days * 24 * 60 * 60 * 1000;
+  startRangeEl.value = String(firstDateIndexOnOrAfter(startTime));
+  endRangeEl.value = String(end);
+  render();
 }
 
 function updateRangeUI() {
@@ -590,6 +607,10 @@ resetRangeEl.addEventListener("click", () => {
   endRangeEl.value = String(dates.length - 1);
   render();
 });
+
+lastMonthRangeEl.addEventListener("click", () => setRangeByDays(31));
+lastSixMonthsRangeEl.addEventListener("click", () => setRangeByDays(183));
+lastYearRangeEl.addEventListener("click", () => setRangeByDays(365));
 
 plotFieldEl.addEventListener("change", render);
 plotQueryEl.addEventListener("input", render);

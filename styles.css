@@ -109,9 +109,17 @@ h1 {
   font-size: 18px;
 }
 
-.range-head button {
+.range-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.range-presets button {
   min-height: 36px;
-  padding: 0 12px;
+  min-width: 48px;
+  padding: 0 10px;
   border: 2px solid var(--ink);
   border-radius: 8px;
   background: #fff;
