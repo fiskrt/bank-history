@@ -14,7 +14,7 @@ Export transactions as CSV from UBS (works both from ios app and website). The a
 ```csv
 "Transaction date","Account or card number","Description","Income or expense","Amount","Currency","Category"
 "16.04.2026","CH40 ...","STADT Z RICH ...","Expense","-131.00","CHF","Utilities"
-"27.03.2026","CH40 ...","migros supermarket ...","Expense","30.00","CHF","Food"
+"27.03.2026","CH40 ...","migros supermarket ...","Expense","-30.00","CHF","Food"
 ```
 
 Amounts may use Swiss thousands separators like `1'150.00`.
