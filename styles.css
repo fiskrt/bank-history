@@ -77,6 +77,42 @@ h1 {
   color: var(--muted);
 }
 
+.totals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 0 0 20px;
+}
+
+.total {
+  padding: 14px;
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.total span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.total strong {
+  display: block;
+  margin-top: 4px;
+  font-size: 24px;
+}
+
+.total.net-positive strong {
+  color: var(--income);
+}
+
+.total.net-negative strong {
+  color: var(--expense);
+}
+
 .drawer {
   position: fixed;
   inset: 0 0 0 auto;
@@ -319,6 +355,10 @@ h2 {
   }
 
   .plots {
+    grid-template-columns: 1fr;
+  }
+
+  .totals {
     grid-template-columns: 1fr;
   }
 

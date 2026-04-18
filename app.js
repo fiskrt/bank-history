@@ -1,4 +1,5 @@
 const statusEl = document.querySelector("#status");
+const totalsEl = document.querySelector("#totals");
 const monthsEl = document.querySelector("#months");
 const fileEl = document.querySelector("#file");
 const detailsEl = document.querySelector("#details");
@@ -238,6 +239,20 @@ function render(rows) {
   const months = aggregate(rows);
   monthsEl.textContent = "";
   statusEl.textContent = `${rows.length.toLocaleString()} rows parsed. Positive amounts are income. Negative amounts are expenses.`;
+
+  let totalIncome = 0;
+  let totalExpenses = 0;
+  for (const [, values] of months) {
+    totalIncome += [...values.income.values()].reduce((sum, item) => sum + item.amount, 0);
+    totalExpenses += [...values.expenses.values()].reduce((sum, item) => sum + item.amount, 0);
+  }
+  const net = totalIncome - totalExpenses;
+  totalsEl.hidden = false;
+  totalsEl.innerHTML = `
+    <div class="total"><span>Total in</span><strong>${money(totalIncome)}</strong></div>
+    <div class="total"><span>Total out</span><strong>${money(totalExpenses)}</strong></div>
+    <div class="total ${net >= 0 ? "net-positive" : "net-negative"}"><span>Difference</span><strong>${money(net)}</strong></div>
+  `;
 
   for (const [key, values] of months) {
     const label = monthName(key);
