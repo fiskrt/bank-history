@@ -222,7 +222,7 @@ h1 {
 
 .plotter-head {
   display: grid;
-  grid-template-columns: minmax(220px, 1fr) minmax(360px, 1.2fr);
+  grid-template-columns: minmax(220px, 1fr) minmax(520px, 1.5fr);
   gap: 16px;
   align-items: end;
   margin-bottom: 14px;
@@ -245,8 +245,9 @@ h1 {
 
 .plotter-controls {
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr);
+  grid-template-columns: 160px minmax(0, 1fr) 150px;
   gap: 10px;
+  align-items: end;
 }
 
 .plotter-controls select,
@@ -313,6 +314,14 @@ h1 {
   outline: none;
   stroke: var(--ink);
   stroke-width: 3;
+}
+
+.plot-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .drawer {

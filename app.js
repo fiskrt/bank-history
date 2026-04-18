@@ -9,6 +9,7 @@ const plotterEl = document.querySelector("#plotter");
 const plotSummaryEl = document.querySelector("#plotSummary");
 const plotFieldEl = document.querySelector("#plotField");
 const plotQueryEl = document.querySelector("#plotQuery");
+const plotAggregateEl = document.querySelector("#plotAggregate");
 const matchPlotEl = document.querySelector("#matchPlot");
 const monthsEl = document.querySelector("#months");
 const fileEl = document.querySelector("#file");
@@ -273,21 +274,22 @@ function closeDetails() {
   scrimEl.hidden = true;
 }
 
-function showSingleTransaction(row) {
-  const amount = Math.abs(row._amount);
-  const direction = row._amount >= 0 ? "Income" : "Expense";
+function openTransactionList(title, subtitle, rows) {
+  const transactions = [...rows].sort((a, b) => Math.abs(b._amount) - Math.abs(a._amount));
   detailsBodyEl.innerHTML = `
-    <h3>${escapeHTML(direction)} / ${escapeHTML(row.Category || "Uncategorized")}</h3>
-    <p>${money(amount)} · ${escapeHTML(row["Transaction date"])}</p>
+    <h3>${escapeHTML(title)}</h3>
+    <p>${escapeHTML(subtitle)} · ${transactions.length} transactions</p>
     <ul class="tx-list">
-      <li>
-        <span class="tx-date">${escapeHTML(row["Transaction date"])}</span>
-        <span>
-          <span class="tx-desc">${escapeHTML(row.Description)}</span>
-          <span class="tx-cat">${escapeHTML(row.Category || "Uncategorized")}</span>
-        </span>
-        <span class="tx-amount">${money(amount)}</span>
-      </li>
+      ${transactions.map((row) => `
+        <li>
+          <span class="tx-date">${escapeHTML(row["Transaction date"])}</span>
+          <span>
+            <span class="tx-desc">${escapeHTML(row.Description)}</span>
+            <span class="tx-cat">${escapeHTML(row.Category || "Uncategorized")}</span>
+          </span>
+          <span class="tx-amount">${money(Math.abs(row._amount))}</span>
+        </li>
+      `).join("")}
     </ul>
   `;
   detailsEl.classList.add("open");
@@ -295,10 +297,71 @@ function showSingleTransaction(row) {
   scrimEl.hidden = false;
 }
 
+function showSingleTransaction(row) {
+  const direction = row._amount >= 0 ? "Income" : "Expense";
+  openTransactionList(
+    `${direction} / ${row.Category || "Uncategorized"}`,
+    `${money(Math.abs(row._amount))} · ${row["Transaction date"]}`,
+    [row],
+  );
+}
+
+function periodKey(row, aggregate) {
+  const date = new Date(row._time);
+  if (aggregate === "month") {
+    return {
+      key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
+      time: new Date(date.getFullYear(), date.getMonth(), 1).getTime(),
+      label: date.toLocaleString("en", { month: "long", year: "numeric" }),
+    };
+  }
+
+  const start = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  const day = start.getDay() || 7;
+  start.setDate(start.getDate() - day + 1);
+  return {
+    key: `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, "0")}-${String(start.getDate()).padStart(2, "0")}`,
+    time: start.getTime(),
+    label: `Week of ${dateText(start.getTime())}`,
+  };
+}
+
+function plotPoints(matches, aggregate) {
+  if (aggregate === "transaction") {
+    return matches.map((row) => ({
+      time: row._time,
+      amount: Math.abs(row._amount),
+      rows: [row],
+      label: row["Transaction date"],
+      fill: row._amount >= 0 ? "var(--income)" : "var(--expense)",
+    }));
+  }
+
+  const buckets = new Map();
+  for (const row of matches) {
+    const period = periodKey(row, aggregate);
+    const bucket = buckets.get(period.key) ?? { ...period, amount: 0, rows: [], timeSum: 0 };
+    bucket.amount += Math.abs(row._amount);
+    bucket.rows.push(row);
+    bucket.timeSum += row._time;
+    buckets.set(period.key, bucket);
+  }
+
+  return [...buckets.values()]
+    .sort((a, b) => a.time - b.time)
+    .map((bucket) => ({
+      ...bucket,
+      time: bucket.timeSum / bucket.rows.length,
+      fill: "#118ab2",
+    }));
+}
+
 function renderMatcher(rows) {
   plotterEl.hidden = false;
   const query = plotQueryEl.value.trim().toLowerCase();
   const field = plotFieldEl.value;
+  const aggregate = plotAggregateEl.value;
+  const lineOn = aggregate !== "transaction";
 
   if (!query) {
     plotSummaryEl.textContent = "Type to search transactions";
@@ -319,7 +382,9 @@ function renderMatcher(rows) {
   const total = matches.reduce((sum, row) => sum + Math.abs(row._amount), 0);
   const incomeCount = matches.filter((row) => row._amount > 0).length;
   const expenseCount = matches.filter((row) => row._amount < 0).length;
-  plotSummaryEl.textContent = `${matches.length} matches · ${money(total)} total size · ${incomeCount} in / ${expenseCount} out`;
+  const points = plotPoints(matches, aggregate);
+  const mode = lineOn ? ` · ${points.length} ${aggregate} buckets` : ` · ${points.length} daily points`;
+  plotSummaryEl.textContent = `${matches.length} matches${mode} · ${money(total)} total size · ${incomeCount} in / ${expenseCount} out`;
 
   const width = 980;
   const height = 300;
@@ -329,10 +394,13 @@ function renderMatcher(rows) {
   const endTime = dates[end];
   const minTime = startTime === endTime ? startTime - 43200000 : startTime;
   const maxTime = startTime === endTime ? endTime + 43200000 : endTime;
-  const maxAmount = Math.max(...matches.map((row) => Math.abs(row._amount)), 1);
+  const maxAmount = Math.max(...points.map((point) => point.amount), 1);
   const plotWidth = width - pad.left - pad.right;
   const plotHeight = height - pad.top - pad.bottom;
-  const x = (time) => pad.left + ((time - minTime) / (maxTime - minTime)) * plotWidth;
+  const x = (time) => {
+    const clamped = Math.min(Math.max(time, minTime), maxTime);
+    return pad.left + ((clamped - minTime) / (maxTime - minTime)) * plotWidth;
+  };
   const y = (amount) => pad.top + plotHeight - (Math.abs(amount) / maxAmount) * plotHeight;
   const yMid = Math.ceil(maxAmount / 2);
 
@@ -350,22 +418,42 @@ function renderMatcher(rows) {
   `;
 
   const svg = matchPlotEl.querySelector("svg");
-  for (const row of matches) {
+  if (lineOn && points.length > 1) {
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.classList.add("plot-line");
+    path.setAttribute("d", points.map((point, index) => {
+      const cmd = index === 0 ? "M" : "L";
+      return `${cmd}${x(point.time).toFixed(2)},${y(point.amount).toFixed(2)}`;
+    }).join(" "));
+    svg.append(path);
+  }
+
+  for (const pointData of points) {
     const point = document.createElementNS("http://www.w3.org/2000/svg", "circle");
     point.classList.add("plot-point");
-    point.setAttribute("cx", x(row._time));
-    point.setAttribute("cy", y(row._amount));
-    point.setAttribute("r", "7");
+    point.setAttribute("cx", x(pointData.time));
+    point.setAttribute("cy", y(pointData.amount));
+    point.setAttribute("r", pointData.rows.length > 1 ? "8" : "7");
     point.setAttribute("tabindex", "0");
-    point.setAttribute("fill", row._amount >= 0 ? "var(--income)" : "var(--expense)");
+    point.setAttribute("fill", pointData.fill);
     const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
-    title.textContent = `${row["Transaction date"]} · ${row.Description} · ${money(Math.abs(row._amount))}`;
+    title.textContent = `${pointData.label} · ${money(pointData.amount)} · ${pointData.rows.length} transactions`;
     point.append(title);
-    point.addEventListener("click", () => showSingleTransaction(row));
+    point.addEventListener("click", () => {
+      if (pointData.rows.length === 1) {
+        showSingleTransaction(pointData.rows[0]);
+      } else {
+        openTransactionList(pointData.label, money(pointData.amount), pointData.rows);
+      }
+    });
     point.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
-        showSingleTransaction(row);
+        if (pointData.rows.length === 1) {
+          showSingleTransaction(pointData.rows[0]);
+        } else {
+          openTransactionList(pointData.label, money(pointData.amount), pointData.rows);
+        }
       }
     });
     svg.append(point);
@@ -505,6 +593,7 @@ resetRangeEl.addEventListener("click", () => {
 
 plotFieldEl.addEventListener("change", render);
 plotQueryEl.addEventListener("input", render);
+plotAggregateEl.addEventListener("change", render);
 
 closeDetailsEl.addEventListener("click", closeDetails);
 scrimEl.addEventListener("click", closeDetails);
